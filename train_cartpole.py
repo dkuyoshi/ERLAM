@@ -17,7 +17,7 @@ from chainerrl import q_functions
 from chainerrl import replay_buffer
 
 from q_function import QFunction, DuelingQFunction, QFunctionCartPole
-from agent import ERLAM
+from erlam import ERLAM
 
 
 def main():

@@ -20,7 +20,7 @@ from chainerrl import replay_buffer
 from chainerrl.wrappers import atari_wrappers
 
 from q_function import QFunction, DuelingQFunction
-from agent import ERLAM
+from erlam import ERLAM
 
 
 def main():
