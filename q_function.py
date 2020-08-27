@@ -62,18 +62,25 @@ class QFunction(Chain):
         return self.xp.asarray(embeddings)
 
     def get_embedding_each_frame(self, x):
-        # Random Projection (4, 1, 4)の形
+        # Random Projection (4, 1, 4) => (1, 16)の形
         embeddings = []
         for a_frame in self.xp.squeeze(x):
             a_frame = a_frame.flatten()
             a_new = self.transformer.fit_transform(a_frame.reshape(1, -1))
             embeddings.append(a_new)
 
-        return self.xp.asarray(embeddings)
+        return self.xp.concatenate(embeddings, axis=0).reshape(1, -1)
 
     def batch_get_embedding_each_frame(self, x):
-
-        pass
+        batch_embeddings = []
+        for a_x in self.xp.squeeze(x):
+            embeddings = []
+            for a_frame in a_x:
+                a_flat = a_frame.flatten()
+                a_new = self.transformer.fit_transform(a_flat.reshape(1, -1))
+                embeddings.append(a_new.flatten())
+            batch_embeddings.append(self.xp.concatenate(embeddings, axis=0).reshape(1, -1))
+        return self.xp.asarray(batch_embeddings)
 
 
 class DuelingQFunction(Chain):
@@ -120,6 +127,27 @@ class DuelingQFunction(Chain):
             embeddings.append(a_new)
         return self.xp.asarray(embeddings)
 
+    def get_embedding_each_frame(self, x):
+        # Random Projection (4, 1, 4) => (1, 16)の形
+        embeddings = []
+        for a_frame in self.xp.squeeze(x):
+            a_frame = a_frame.flatten()
+            a_new = self.transformer.fit_transform(a_frame.reshape(1, -1))
+            embeddings.append(a_new)
+
+        return self.xp.concatenate(embeddings, axis=0).reshape(1, -1)
+
+    def batch_get_embedding_each_frame(self, x):
+        batch_embeddings = []
+        for a_x in self.xp.squeeze(x):
+            embeddings = []
+            for a_frame in a_x:
+                a_flat = a_frame.flatten()
+                a_new = self.transformer.fit_transform(a_flat.reshape(1, -1))
+                embeddings.append(a_new.flatten())
+            batch_embeddings.append(self.xp.concatenate(embeddings, axis=0).reshape(1, -1))
+        return self.xp.asarray(batch_embeddings)
+
 
 class CartPoleHead(Chain):
     def __init__(self, obs_size, n_hidden=32, n_out=8):
@@ -163,4 +191,3 @@ class QFunctionCartPole(Chain):
             a_new = self.transformer.fit_transform(a_flat.reshape(1, -1))
             embeddings.append(a_new)
         return self.xp.asarray(embeddings)
-

@@ -67,21 +67,23 @@ class AssociativeMemory(object):
         return self.xp.asarray(value, dtype=self.xp.float32)
 
     def value_propagation(self, gamma):
-        # Algorithm1　これがなんで辻褄が合うのかまだ理解できてないかもしれないっす
+        # Algorithm1　
         converge = False
         prev_qg = 10**7
-        update_qg = 10**-7
         nodes = self._node_sort()
 
         while not converge:
+            update_amount = 0
             for node in nodes:
                 neighbor_qg = self._adjacent_qg(node)
                 update_qg = self.graph.nodes[node]['reward'] + gamma * max(neighbor_qg)
                 self.graph.nodes[node]['qg'] = update_qg
 
-            diff = abs(update_qg - prev_qg)
-            converge = self._converge_judgement(diff)
-            prev_qg = update_qg
+                diff = abs(update_qg - prev_qg)
+                prev_qg = update_qg
+                update_amount += diff
+
+            converge = self._converge_judgement(update_amount)
 
         print('Converge!')
 
@@ -111,7 +113,7 @@ class AssociativeMemory(object):
         self.graph.nodes[self.update_index]['qg'] = max(Rt, self.graph.nodes[self.update_index]['qg'])
 
     def _search_node(self, hidden_vector, action):
-        # 同じノードを探す -> Boolで返す(なければFalse)
+        # 同じノードを探す -> Boolで返す(なければFalse) <- 2乗誤差全探索
         for node in self.graph.nodes():
             if self.graph.nodes[node]['action'] == action:
                 diff = self.xp.sum((self.graph.nodes[node]['hidden_vector'] - hidden_vector) ** 2, axis=1)
@@ -119,6 +121,29 @@ class AssociativeMemory(object):
                     self.update_index = node
                     self.action_number = action
                     return True
+        return False
+
+    def _search_node_kd(self, hidden_vector, action):
+        # 同じノードを探す -> Boolで返す(なければFalse) <- kd-treeによる距離計算
+        dict_action = nx.get_node_attributes(self.graph, 'action')
+        not_keys = [key for key, val in dict_action.items() if val != action]
+        dict_hidden = nx.get_node_attributes(self.graph, 'hidden_vector')
+        for no in not_keys:
+            del dict_hidden[no]
+        embeddings_data = np.squeeze(list(dict_hidden.values()))
+        embeddings_id = np.asarray(list(dict_hidden.keys()), dtype=np.int32)
+
+        if len(embeddings_data) == 0:
+            return False
+
+        tree = KDTree(embeddings_data)
+        dist, ind = tree.query(hidden_vector, k=1)
+
+        if dist[0][0] <= self.key_error_threshold:
+            self.update_index = embeddings_id[ind[0][0]]
+            self.action_number = action
+            return True
+
         return False
 
     def _lookup(self, hidden_vector, action):
@@ -146,7 +171,7 @@ class AssociativeMemory(object):
         embeddings_id = np.asarray(list(dict_hidden.keys()), dtype=np.int32)
 
         tree = KDTree(embeddings_data)
-        dist, ind = tree.query(hidden_vector, k=1)
+        dist, ind = tree.query(hidden_vector, k=5)
 
         if len(ind[0]) == 1:
             return embeddings_id[ind].flatten()
