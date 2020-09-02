@@ -22,7 +22,8 @@ class AssociativeMemory(object):
         self.keys = self.xp.empty((capacity, dim), dtype=self.xp.float32)
 
         # LRUの戦略のための色々な情報の初期化
-        self.lru_timestamp = self.xp.empty(self.capacity, dtype=self.xp.int32)
+        # self.lru_timestamp = self.xp.empty(self.capacity, dtype=self.xp.int32)
+        self.lru_timestamp = np.empty(self.capacity, dtype=np.int32)
         self.current_timestamp = 0
         self.current_size = 0
 
@@ -100,7 +101,7 @@ class AssociativeMemory(object):
             self.current_timestamp += 1
         else:
             index = np.argmin(self.lru_timestamp)
-            index = cuda.to_cpu(index)
+            # index = cuda.to_cpu(index)
             self.graph.remove_node(index)
             self.graph.add_node(index, hidden_vector=hidden_vector, action=action, reward=reward, id=t, qg=Rt)
             self.index_list.append(index)
