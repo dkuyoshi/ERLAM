@@ -165,6 +165,7 @@ class AssociativeMemory(object):
 
     def _lookup_kd(self, hidden_vector, action):
         # KD-Treeによる最近傍
+        hidden_vector = cuda.to_cpu(hidden_vector)
         dict_action = nx.get_node_attributes(self.graph, 'action')
         not_keys = [key for key, val in dict_action.items() if val != action]
         dict_hidden = nx.get_node_attributes(self.graph, 'hidden_vector')
