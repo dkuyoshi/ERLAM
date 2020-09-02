@@ -77,10 +77,10 @@ class AssociativeMemory(object):
             for node in nodes:
                 neighbor_qg = self._adjacent_qg(node)
                 update_qg = self.graph.nodes[node]['reward'] + gamma * max(neighbor_qg)
+                prev_qg = self.graph.nodes[node]['qg']
                 self.graph.nodes[node]['qg'] = update_qg
 
                 diff = abs(update_qg - prev_qg)
-                prev_qg = update_qg
                 update_amount += diff
 
             converge = self._converge_judgement(update_amount)

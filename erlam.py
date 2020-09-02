@@ -414,7 +414,7 @@ class ERLAM(agent.AttributeSavingMixin, agent.BatchAgent):
         else:
             if nx.number_of_nodes(self.associative_memory.graph) >= self.start_size:
                 # GraphからのLoss計算
-                batch_h = self.model.batch_get_embedding(exp_batch['state'])
+                batch_h = self.model.batch_get_embedding_each_frame(exp_batch['state'])
                 qg = self.associative_memory.get_q(batch_h, exp_batch['action'])
                 return compute_value_loss_erlam(y, t, qg, self.lambdas, clip_delta=self.clip_delta,
                                                 batch_accumulator=self.batch_accumulator)
@@ -515,9 +515,9 @@ class ERLAM(agent.AttributeSavingMixin, agent.BatchAgent):
                     batch_xs, self.train_recurrent_states)
         else:
             batch_av = self.model(batch_xs)
-            batch_h = self.model.get_embedding(batch_xs)
-            #batch_h16 = self.model.get_embedding_each_frame(batch_xs)
-        return batch_av, batch_h
+            # batch_h = self.model.get_embedding(batch_xs)
+            batch_h16 = self.model.get_embedding_each_frame(batch_xs)
+        return batch_av, batch_h16
 
     def batch_act_and_train(self, batch_obs):
         with chainer.using_config('train', False), chainer.no_backprop_mode():

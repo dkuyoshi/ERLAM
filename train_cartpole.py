@@ -62,7 +62,7 @@ def main():
     parser.add_argument('--lambdas', type=float, default=0.1)
     parser.add_argument('--dim', type=int, default=4, help='dimension for random projection')
     parser.add_argument('--no_erlam', action='store_true', default=False, help='dqn de training')
-    parser.add_argument('--start_size', type=int, default=2000, help='start to use graph')
+    parser.add_argument('--start_size', type=int, default=5000, help='start to use graph')
     parser.add_argument('--graph_capacity', type=int, default=5000, help='max size of graph')
     parser.add_argument('--k_neighbor', type=int, default=3, help='k nearest neighbor')
     args = parser.parse_args()
@@ -154,7 +154,7 @@ def main():
                   capacity=args.graph_capacity,
                   explorer=explorer, replay_start_size=args.replay_start_size,
                   target_update_interval=args.target_update_interval,
-                  clip_delta=True,
+                  clip_delta=False,
                   update_interval=args.update_interval,
                   batch_accumulator='sum',
                   phi=lambda x: x,)

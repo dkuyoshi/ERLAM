@@ -1,4 +1,6 @@
 import chainer
+import numpy as np
+from chainer import cuda
 from chainer import Chain, Sequential, ChainList, Variable
 from chainer import links as L
 from chainer import functions as F
@@ -64,7 +66,8 @@ class QFunction(Chain):
     def get_embedding_each_frame(self, x):
         # Random Projection (4, 1, 4) => (1, 16)の形
         embeddings = []
-        for a_frame in self.xp.squeeze(x):
+        x = cuda.to_cpu(x)
+        for a_frame in np.squeeze(x):
             a_frame = a_frame.flatten()
             a_new = self.transformer.fit_transform(a_frame.reshape(1, -1))
             embeddings.append(a_new)
@@ -73,7 +76,8 @@ class QFunction(Chain):
 
     def batch_get_embedding_each_frame(self, x):
         batch_embeddings = []
-        for a_x in self.xp.squeeze(x):
+        x = cuda.to_cpu(x)
+        for a_x in np.squeeze(x):
             embeddings = []
             for a_frame in a_x:
                 a_flat = a_frame.flatten()
@@ -150,7 +154,7 @@ class DuelingQFunction(Chain):
 
 
 class CartPoleHead(Chain):
-    def __init__(self, obs_size, n_hidden=32, n_out=8):
+    def __init__(self, obs_size, n_hidden=64, n_out=32):
         super().__init__()
         with self.init_scope():
             self.l0 = L.Linear(obs_size, n_hidden)
@@ -163,7 +167,7 @@ class CartPoleHead(Chain):
 
 
 class QFunctionCartPole(Chain):
-    def __init__(self, obs_size, n_actions, n_hidden=8, dim=4):
+    def __init__(self, obs_size, n_actions, n_hidden=32, dim=4):
         super().__init__()
         with self.init_scope():
             self.hout = CartPoleHead(obs_size)
@@ -173,7 +177,7 @@ class QFunctionCartPole(Chain):
 
     def __call__(self, x):
         self.l = self.hout(x)
-        q = self.qout(F.relu(self.l))
+        q = self.qout(self.l)
 
         return DiscreteActionValue(q)
 

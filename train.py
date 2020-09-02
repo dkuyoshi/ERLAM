@@ -53,7 +53,7 @@ def main():
     parser.add_argument('--max-frames', type=int,
                         default=30 * 60 * 60,  # 30 minutes with 60 fps
                         help='Maximum number of frames for each episode.')
-    parser.add_argument('--replay-start-size', type=int, default=5,
+    parser.add_argument('--replay-start-size', type=int, default=5*10**4,
                         help='Minimum replay buffer size before ' +
                              'performing gradient updates.')
     parser.add_argument('--target-update-interval',
