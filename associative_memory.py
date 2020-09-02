@@ -65,7 +65,7 @@ class AssociativeMemory(object):
                 self.lru_timestamp[node] = self.current_timestamp
                 self.current_timestamp += 1
                 qg.append(self.graph.nodes[node]['qg'])
-            value.append(self.xp.mean(qg))
+            value.append(np.mean(qg))
         return self.xp.asarray(value, dtype=self.xp.float32)
 
     def value_propagation(self, gamma):
