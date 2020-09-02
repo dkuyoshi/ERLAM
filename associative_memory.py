@@ -3,6 +3,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from collections import deque
 from sklearn.neighbors import KDTree
+from chainer import cuda
 
 
 class AssociativeMemory(object):
@@ -99,7 +100,7 @@ class AssociativeMemory(object):
             self.current_timestamp += 1
         else:
             index = np.argmin(self.lru_timestamp)
-            self.graph.remove_node(index)
+            self.graph.remove_node(cuda.to_cpu(index))
             self.graph.add_node(index, hidden_vector=hidden_vector, action=action, reward=reward, id=t, qg=Rt)
             self.index_list.append(index)
             self.action_list.append(action)
