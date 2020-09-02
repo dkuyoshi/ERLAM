@@ -195,3 +195,20 @@ class QFunctionCartPole(Chain):
             a_new = self.transformer.fit_transform(a_flat.reshape(1, -1))
             embeddings.append(a_new)
         return self.xp.asarray(embeddings)
+
+    def get_embedding_each_frame(self, x):
+        # Random Projection
+        # x_flat = x.flatten()
+        x = cuda.to_cpu(x)
+        x_new = self.transformer.fit_transform(x.reshape(1, -1))
+
+        return x_new
+
+    def batch_get_embedding_each_frame(self, x):
+        embeddings = []
+        x = cuda.to_cpu(x)
+        for a in x:
+            a_flat = a.flatten()
+            a_new = self.transformer.fit_transform(a_flat.reshape(1, -1))
+            embeddings.append(a_new)
+        return self.xp.asarray(embeddings)
