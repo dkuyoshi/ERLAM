@@ -71,7 +71,7 @@ class QFunction(Chain):
             a_frame = a_frame.flatten()
             a_new = self.transformer.fit_transform(a_frame.reshape(1, -1))
             embeddings.append(a_new)
-
+        embeddings = cuda.to_gpu(embeddings)
         return self.xp.concatenate(embeddings, axis=0).reshape(1, -1)
 
     def batch_get_embedding_each_frame(self, x):
