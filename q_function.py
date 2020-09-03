@@ -71,8 +71,8 @@ class QFunction(Chain):
             a_frame = a_frame.flatten()
             a_new = self.transformer.fit_transform(a_frame.reshape(1, -1))
             embeddings.append(a_new)
-        embeddings = cuda.to_gpu(embeddings)
-        return self.xp.concatenate(embeddings, axis=0).reshape(1, -1)
+        # embeddings = cuda.to_gpu(embeddings)
+        return np.concatenate(embeddings, axis=0).reshape(1, -1)
 
     def batch_get_embedding_each_frame(self, x):
         batch_embeddings = []
@@ -83,8 +83,8 @@ class QFunction(Chain):
                 a_flat = a_frame.flatten()
                 a_new = self.transformer.fit_transform(a_flat.reshape(1, -1))
                 embeddings.append(a_new.flatten())
-            batch_embeddings.append(self.xp.concatenate(embeddings, axis=0).reshape(1, -1))
-        return self.xp.asarray(batch_embeddings)
+            batch_embeddings.append(np.concatenate(embeddings, axis=0).reshape(1, -1))
+        return np.asarray(batch_embeddings)
 
 
 class DuelingQFunction(Chain):

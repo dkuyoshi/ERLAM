@@ -48,7 +48,7 @@ class AssociativeMemory(object):
     def append_collectively(self, hidden_vectors, actions, rewards, ids, Rts):
         # 一気にやるパターン
         for hidden_vector, action, reward, t, qg in zip(hidden_vectors, actions, rewards, ids, Rts):
-            if self._search_node_kd(hidden_vector, action):
+            if self._search_node(hidden_vector, action):
                 self._update_qg(qg)
             else:
                 self._lru_strategy(hidden_vector, action, reward, t, qg)
@@ -128,7 +128,7 @@ class AssociativeMemory(object):
 
     def _search_node_kd(self, hidden_vector, action):
         # 同じノードを探す -> Boolで返す(なければFalse) <- kd-treeによる距離計算
-        hidden_vector = cuda.to_cpu(hidden_vector)
+        # hidden_vector = cuda.to_cpu(hidden_vector)
         dict_action = nx.get_node_attributes(self.graph, 'action')
         not_keys = [key for key, val in dict_action.items() if val != action]
         dict_hidden = nx.get_node_attributes(self.graph, 'hidden_vector')
@@ -166,7 +166,7 @@ class AssociativeMemory(object):
 
     def _lookup_kd(self, hidden_vector, action):
         # KD-Treeによる最近傍
-        hidden_vector = cuda.to_cpu(hidden_vector)
+        # hidden_vector = cuda.to_cpu(hidden_vector)
         dict_action = nx.get_node_attributes(self.graph, 'action')
         not_keys = [key for key, val in dict_action.items() if val != action]
         dict_hidden = nx.get_node_attributes(self.graph, 'hidden_vector')

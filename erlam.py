@@ -673,6 +673,7 @@ class ERLAM(agent.AttributeSavingMixin, agent.BatchAgent):
                 Rt.append(Rt_history)
                 # self.associative_memory.append(embedding, action, reward, t, Rt)
 
+        embeddings_back = cuda.to_cpu(embeddings_back)
         self.associative_memory.append_collectively(embeddings_back, actions_back, rewards_back, id_backs, Rt)
         self.associative_memory.add_edge()
         # self.associative_memory.visualize_graph()
