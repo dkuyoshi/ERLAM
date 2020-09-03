@@ -647,19 +647,35 @@ class ERLAM(agent.AttributeSavingMixin, agent.BatchAgent):
 
         # グラフに追加していく(for t=Te...1) and Rtの計算も含めて
         initial_step = True
+        '''
         for embedding, action, reward, t in zip(embeddings_back, actions_back, rewards_back, id_backs):
             if initial_step:
                 Rt_history = reward
                 # Rt.append(Rt_history)
                 Rt = Rt_history
-                self.associative_memory.append(embedding, action, reward, t, Rt)
+                # self.associative_memory.append(embedding, action, reward, t, Rt)
                 initial_step = False
             else:
                 Rt_history = reward + self.gamma * Rt_history
                 # Rt.append(Rt_history)
                 Rt = Rt_history
-                self.associative_memory.append(embedding, action, reward, t, Rt)
+                # self.associative_memory.append(embedding, action, reward, t, Rt)
+        '''
+        Rt = []
+        for reward in rewards_back:
+            if initial_step:
+                Rt_history = reward
+                Rt.append(Rt_history)
+                Rt = Rt_history
+                # self.associative_memory.append(embedding, action, reward, t, Rt)
+                initial_step = False
+            else:
+                Rt_history = reward + self.gamma * Rt_history
+                Rt.append(Rt_history)
+                Rt = Rt_history
+                # self.associative_memory.append(embedding, action, reward, t, Rt)
 
+        self.associative_memory.append_collectively(embeddings_back, actions_back, rewards_back, id_backs, Rt)
         self.associative_memory.add_edge()
         # self.associative_memory.visualize_graph()
         # self.associative_memory.append_collectively(embeddings_back, actions_back, rewards_back, id_backs, Rt)
