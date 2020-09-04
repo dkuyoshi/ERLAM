@@ -15,6 +15,7 @@ from chainerrl.replay_buffer import ReplayUpdater
 from associative_memory import AssociativeMemory
 
 import networkx as nx
+from collections import deque
 
 
 def compute_value_loss(y, t, clip_delta=True, batch_accumulator='mean'):
@@ -245,10 +246,10 @@ class ERLAM(agent.AttributeSavingMixin, agent.BatchAgent):
         self.associative_memory = AssociativeMemory(capacity=capacity, xp=self.xp, dim=dim)
 
         # 逆順で追加していくやつのためのリスト定義
-        self.embeddings_back = []
-        self.actions_back = []
-        self.rewards_back = []
-        self.id_backs = []
+        self.embeddings_back = deque()
+        self.actions_back = deque()
+        self.rewards_back = deque()
+        self.id_backs = deque()
 
         # episode numberたちもここで管理
         self.te = 0
@@ -637,13 +638,14 @@ class ERLAM(agent.AttributeSavingMixin, agent.BatchAgent):
         self.rewards_back.append(reward)
         self.id_backs.append(self.te)
 
+        '''
         # Rt = []
         embeddings_back = self.embeddings_back[::-1]
         actions_back = self.actions_back[::-1]
         rewards_back = self.rewards_back[::-1]
         id_backs = self.id_backs[::-1]
-
-        assert len(rewards_back) == len(id_backs) and len(id_backs) == len(embeddings_back), '何かがおかしい'
+        '''
+        assert len(self.rewards_back) == len(self.id_backs) and len(self.id_backs) == len(self.embeddings_back), '何かがおかしい'
 
         # グラフに追加していく(for t=Te...1) and Rtの計算も含めて
         initial_step = True
@@ -661,8 +663,9 @@ class ERLAM(agent.AttributeSavingMixin, agent.BatchAgent):
                 Rt = Rt_history
                 # self.associative_memory.append(embedding, action, reward, t, Rt)
         '''
-        Rt = []
-        for reward in rewards_back:
+
+        '''
+        for reward in self.rewards_back:
             if initial_step:
                 Rt_history = reward
                 Rt.append(Rt_history)
@@ -672,9 +675,27 @@ class ERLAM(agent.AttributeSavingMixin, agent.BatchAgent):
                 Rt_history = reward + self.gamma * Rt_history
                 Rt.append(Rt_history)
                 # self.associative_memory.append(embedding, action, reward, t, Rt)
+        '''
 
-        embeddings_back = cuda.to_cpu(embeddings_back)
-        self.associative_memory.append_collectively(embeddings_back, actions_back, rewards_back, id_backs, Rt)
+        # embeddings_back = cuda.to_cpu(self.embeddings_back)
+        rewards_back = self.rewards_back.copy()
+
+        length = len(self.rewards_back)
+
+        for _ in range(length):
+            if initial_step:
+                Rt = self.rewards_back.pop()
+                h, a, r, t = self.embeddings_back.pop(), self.actions_back.pop(), rewards_back.pop(), self.id_backs.pop()
+                self.associative_memory.append(h, a, r, t, Rt)
+                initial_step = False
+            else:
+                Rt = self.rewards_back.pop() + self.gamma * Rt
+                h, a, r, t = self.embeddings_back.pop(), self.actions_back.pop(), rewards_back.pop(), self.id_backs.pop()
+                self.associative_memory.append(h, a, r, t, Rt)
+
+        assert len(self.rewards_back) == 0 and len(self.embeddings_back) == 0 and len(self.actions_back) == 0
+
+        # self.associative_memory.append_collectively(self.embeddings_back, self.actions_back, rewards_back, self.id_backs, Rt)
         self.associative_memory.add_edge()
         # self.associative_memory.visualize_graph()
         # self.associative_memory.append_collectively(embeddings_back, actions_back, rewards_back, id_backs, Rt)
@@ -700,10 +721,10 @@ class ERLAM(agent.AttributeSavingMixin, agent.BatchAgent):
         self.associative_memory.value_propagation(self.gamma)
 
     def _back_information_reset(self):
-        self.embeddings_back = []
-        self.actions_back = []
-        self.rewards_back = []
-        self.id_backs = []
+        self.embeddings_back.clear()
+        self.actions_back.clear()
+        self.rewards_back.clear()
+        self.id_backs.clear()
         self.te = 0
 
     def stop_episode(self):

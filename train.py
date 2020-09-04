@@ -89,7 +89,7 @@ def main():
     parser.add_argument('--lambdas', type=float, default=0.3)
     parser.add_argument('--dim', type=int, default=4, help='dimension for random projection')
     parser.add_argument('--no_erlam', action='store_true', default=False, help='dqn de training')
-    parser.add_argument('--start_size', type=int, default=10 ** 4, help='start to use graph')
+    parser.add_argument('--start_size', type=int, default=10 ** 5, help='start to use graph')
     parser.add_argument('--graph_capacity', type=int, default=10 ** 6, help='max size of graph')
     parser.add_argument('--k_neighbor', type=int, default=5, help='k nearest neighbor')
     args = parser.parse_args()

@@ -30,9 +30,11 @@ class AssociativeMemory(object):
         # self.queue = deque()
 
         # エッジ追加用のバッファ
-        self.index_list = []
-        self.action_list = []
+        # self.index_list = []
+        # self.action_list = []
 
+        self.index_list = deque()
+        self.action_list = deque()
         # update用のインデックス確保
         self.update_index = None
         self.action_number = None
@@ -79,7 +81,7 @@ class AssociativeMemory(object):
             for node in nodes:
                 neighbor_qg = self._adjacent_qg(node)
                 update_qg = self.graph.nodes[node]['reward'] + gamma * max(neighbor_qg)
-                prev_qg = self.graph.nodes[node]['qg']
+                prev_qg = self.graph.nodes[node]['qg'].copy()
                 self.graph.nodes[node]['qg'] = update_qg
 
                 diff = abs(update_qg - prev_qg)
@@ -209,11 +211,19 @@ class AssociativeMemory(object):
 
     def add_edge(self):
         # エッジの追加
-        for i in range(len(self.index_list) - 1):
-            self.graph.add_edge(self.index_list[i + 1], self.index_list[i], action=self.action_list[i+1])
+        length = len(self.index_list) - 1
+        prev_node = self.index_list.popleft()
+        action = self.action_list.popleft()
+        for _ in range(length):
+            # self.graph.add_edge(self.index_list[i + 1], self.index_list[i], action=self.action_list[i+1])
+            node = self.index_list.popleft()
+            action = self.action_list.popleft()
+            self.graph.add_edge(node, prev_node, action=action)
+            prev_node = node
 
-        self.index_list = []
-        self.action_list = []
+        assert len(self.index_list) == 0 and len(self.action_list) == 0
+        self.index_list.clear()
+        self.action_list.clear()
 
     def visualize_graph(self):
         # AssociativeMemoryの可視化用
