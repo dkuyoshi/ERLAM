@@ -66,17 +66,17 @@ class QFunction(Chain):
     def get_embedding_each_frame(self, x):
         # Random Projection (4, 1, 4) => (1, 16)の形
         embeddings = []
-        x = cuda.to_cpu(x)
+        # x = cuda.to_cpu(x)
         for a_frame in np.squeeze(x):
             a_frame = a_frame.flatten()
             a_new = self.transformer.fit_transform(a_frame.reshape(1, -1))
             embeddings.append(a_new)
         # embeddings = cuda.to_gpu(embeddings)
-        return np.concatenate(embeddings, axis=0).reshape(1, -1)
+        return self.xp.concatenate(embeddings, axis=0).reshape(1, -1)
 
     def batch_get_embedding_each_frame(self, x):
         batch_embeddings = []
-        x = cuda.to_cpu(x)
+        # x = cuda.to_cpu(x)
         for a_x in np.squeeze(x):
             embeddings = []
             for a_frame in a_x:
@@ -84,7 +84,7 @@ class QFunction(Chain):
                 a_new = self.transformer.fit_transform(a_flat.reshape(1, -1))
                 embeddings.append(a_new.flatten())
             batch_embeddings.append(np.concatenate(embeddings, axis=0).reshape(1, -1))
-        return np.asarray(batch_embeddings)
+        return self.xp.asarray(batch_embeddings)
 
 
 class DuelingQFunction(Chain):

@@ -9,32 +9,32 @@ from chainer import cuda
 class AssociativeMemory(object):
     def __init__(self, capacity, xp, dim=4):
         self.capacity = capacity
-        self.key_error_threshold = 10**-7  # (このくらいでいいのか？)
-        self.converge_threshold = 10**-6  # (これも変えていく可能性あり)
+        self.key_error_threshold = 10**-7
+        self.converge_threshold = 10**-6
         self.xp = xp
         self.dim = dim
 
-        # simpleな有向グラフとする (持たせる情報は ht, at, rt, t, Rt)
+        # simpleな有向グラフとする (持たせる情報は at, rt, t, Rt)
         # ノードのkeyをどのようにしようか? keyはただの追加順の番号にしてノードの属性に全部入れちゃうか
         self.graph = nx.DiGraph()
 
         # 埋め込み情報を格納しておくバッファ
-        self.keys = self.xp.empty((capacity, dim), dtype=self.xp.float32)
+        self.keys = self.xp.empty((capacity, dim*4), dtype=self.xp.float32)  # atari
+        # self.keys = self.xp.empty((capacity, dim), dtype=self.xp.float32)  # cartpole
+
 
         # LRUの戦略のための色々な情報の初期化
         # self.lru_timestamp = self.xp.empty(self.capacity, dtype=self.xp.int32)
-        self.lru_timestamp = np.empty(self.capacity, dtype=np.int32)
+        self.lru_timestamp = np.empty(capacity, dtype=np.int32)
         self.current_timestamp = 0
         self.current_size = 0
-
-        # self.queue = deque()
 
         # エッジ追加用のバッファ
         # self.index_list = []
         # self.action_list = []
-
         self.index_list = deque()
         self.action_list = deque()
+        
         # update用のインデックス確保
         self.update_index = None
         self.action_number = None
@@ -95,7 +95,8 @@ class AssociativeMemory(object):
         # LRUによるノードの追加
         if self.current_size < self.capacity:
             index = self.current_size
-            self.graph.add_node(index, hidden_vector=hidden_vector, action=action, reward=reward, id=t, qg=Rt)
+            self.graph.add_node(index, action=action, reward=reward, id=t, qg=Rt)
+            self.keys[index] = hidden_vector
             self.index_list.append(index)
             self.action_list.append(action)
             self.lru_timestamp[index] = self.current_timestamp
@@ -105,7 +106,8 @@ class AssociativeMemory(object):
             index = np.argmin(self.lru_timestamp)
             # index = cuda.to_cpu(index)
             self.graph.remove_node(index)
-            self.graph.add_node(index, hidden_vector=hidden_vector, action=action, reward=reward, id=t, qg=Rt)
+            self.graph.add_node(index, action=action, reward=reward, id=t, qg=Rt)
+            self.keys[index] = hidden_vector
             self.index_list.append(index)
             self.action_list.append(action)
             self.lru_timestamp[index] = self.current_timestamp
@@ -127,6 +129,23 @@ class AssociativeMemory(object):
                     self.action_number = action
                     return True
         return False
+
+    def _search_node_gpu(self, hidden_vector, action):
+        dict_action = nx.get_node_attributes(self.graph, 'action')
+        actions_id = np.asarray(list(dict_action.keys()), dtype=np.int32)
+        keys_index = [key for key, val in dict_action.items() if val == action]
+
+        hidden_vectors = self.keys[keys_index]
+        distances = self.xp.sum((self.xp.asarray(hidden_vector) - hidden_vectors) ** 2, axis=1)
+        
+        # embeddings_data = self.xp.squeeze(list(dict_hidden.values()))
+        # embeddings_id = self.xp.asarray(list(dict_hidden.keys()), dtype=self.xp.int32)
+
+        hidden_vector = cuda.to_gpu(hidden_vector)
+
+        # distances = self.xp.sum((self.xp.asarray(hidden_vector) - embeddings_data) ** 2, axis=1)
+
+        # index = self.xp.argsort(distances)[:1]
 
     def _search_node_kd(self, hidden_vector, action):
         # 同じノードを探す -> Boolで返す(なければFalse) <- kd-treeによる距離計算
